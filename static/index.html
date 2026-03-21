@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>IBN-RAG — Intent-Based Networking Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#03060d;
+  --glass:rgba(255,255,255,.04);
+  --glass2:rgba(255,255,255,.08);
+  --border:rgba(255,255,255,.08);
+  --border-blue:rgba(99,179,255,.28);
+  --blue:#63b3ff;
+  --cyan:#67e8f9;
+  --violet:#a78bfa;
+  --green:#4ade80;
+  --amber:#fbbf24;
+  --red:#f87171;
+  --text:rgba(255,255,255,.88);
+  --text2:rgba(255,255,255,.45);
+  --text3:rgba(255,255,255,.18);
+  --D:'Syncopate',sans-serif;
+  --B:'DM Sans',sans-serif;
+  --M:'DM Mono',monospace;
+}
+
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--B);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Canvas bg ── */
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── Grid overlay ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:1;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(99,179,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(99,179,255,.025) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+/* ── Layout ── */
+.layout{display:flex;min-height:100vh;position:relative;z-index:2}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:280px;flex-shrink:0;
+  background:rgba(3,6,13,.92);
+  border-right:1px solid var(--border);
+  backdrop-filter:blur(24px);
+  display:flex;flex-direction:column;
+  padding:28px 20px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.sidebar::-webkit-scrollbar{width:2px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(99,179,255,.3);border-radius:2px}
+
+.sidebar-logo{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:32px;padding-bottom:20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-hex{
+  width:40px;height:40px;border-radius:11px;
+  background:linear-gradient(135deg,rgba(99,179,255,.22),rgba(103,232,249,.1));
+  border:1px solid rgba(99,179,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  box-shadow:0 0 28px rgba(99,179,255,.18),inset 0 1px 0 rgba(255,255,255,.1);
+  position:relative;
+}
+.logo-dot{
+  position:absolute;bottom:-2px;right:-2px;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--green);border:2px solid var(--bg);
+  box-shadow:0 0 8px var(--green);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 8px var(--green)}50%{box-shadow:0 0 18px var(--green)}}
+.logo-text{font-family:var(--D);font-size:14px;font-weight:700;
+  background:linear-gradient(130deg,#fff 20%,var(--blue) 60%,var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  letter-spacing:.06em;}
+.logo-sub{font-family:var(--M);font-size:9px;color:var(--text3);letter-spacing:.15em;margin-top:2px;}
+
+.sb-label{font-family:var(--D);font-size:8.5px;font-weight:700;color:var(--blue);
+  letter-spacing:.2em;text-transform:uppercase;margin:20px 0 10px;
+  display:flex;align-items:center;gap:6px;}
+.sb-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(99,179,255,.3),transparent);}
+
+/* upload zone */
+.upload-zone{
+  border:1px dashed rgba(99,179,255,.22);border-radius:10px;
+  padding:14px;text-align:center;cursor:pointer;
+  transition:all .2s;background:rgba(99,179,255,.03);
+  margin-bottom:10px;
+}
+.upload-zone:hover{border-color:var(--blue);background:rgba(99,179,255,.07);}
+.upload-zone input{display:none}
+.upload-zone p{font-family:var(--M);font-size:10px;color:var(--text2);line-height:1.6;}
+.upload-zone .uz-icon{font-size:20px;margin-bottom:4px;}
+
+.sb-input{
+  width:100%;padding:9px 12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:var(--M);font-size:11px;
+  outline:none;transition:all .2s;margin-bottom:8px;
+}
+.sb-input:focus{border-color:rgba(99,179,255,.5);box-shadow:0 0 0 3px rgba(99,179,255,.1);}
+.sb-input::placeholder{color:var(--text3);}
+
+.btn{
+  width:100%;padding:10px;border-radius:8px;border:none;cursor:pointer;
+  font-family:var(--D);font-size:9px;font-weight:700;letter-spacing:.15em;
+  transition:all .22s;
+}
+.btn-outline{
+  background:rgba(255,255,255,.04);
+  border:1px solid var(--border-blue);
+  color:var(--blue);
+}
+.btn-outline:hover{background:rgba(99,179,255,.12);box-shadow:0 0 20px rgba(99,179,255,.2);}
+.btn-primary{
+  background:linear-gradient(135deg,rgba(99,179,255,.2),rgba(103,232,249,.14));
+  border:1px solid var(--cyan);color:var(--cyan);
+  box-shadow:0 0 24px rgba(103,232,249,.15);margin-bottom:8px;
+}
+.btn-primary:hover{box-shadow:0 0 40px rgba(103,232,249,.28);transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* namespace chips */
+.ns-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.ns-chip{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;border-radius:7px;
+  background:rgba(99,179,255,.07);border:1px solid rgba(99,179,255,.14);
+  cursor:pointer;transition:all .15s;
+}
+.ns-chip.active{background:rgba(99,179,255,.15);border-color:rgba(99,179,255,.35);}
+.ns-chip:hover{border-color:rgba(99,179,255,.28);}
+.ns-name{font-family:var(--M);font-size:11px;color:var(--blue);}
+.ns-count{font-family:var(--M);font-size:9px;color:var(--text3);}
+.ns-del{font-size:11px;color:var(--text3);cursor:pointer;padding:2px 4px;
+  border-radius:3px;border:none;background:transparent;transition:color .15s;}
+.ns-del:hover{color:var(--red);}
+
+.sb-select{
+  width:100%;padding:9px 12px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--border);border-radius:8px;
+  color:var(--text);font-family:var(--M);font-size:11px;
+  outline:none;cursor:pointer;margin-bottom:8px;
+}
+.sb-select option{background:#0d1a2e;}
+
+.sys-info{
+  margin-top:auto;padding-top:16px;
+  border-top:1px solid var(--border);
+  font-family:var(--M);font-size:10px;color:var(--text3);line-height:2.2;
+}
+.sys-info span{color:var(--blue);}
+.sys-info .online{color:var(--green);}
+
+/* ── Main ── */
+.main{flex:1;padding:36px 40px;overflow-y:auto;}
+.main::-webkit-scrollbar{width:3px}
+.main::-webkit-scrollbar-thumb{background:rgba(99,179,255,.2);border-radius:2px}
+
+/* header */
+.hero{margin-bottom:32px;}
+.hero-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;}
+.hero-title{
+  font-family:var(--D);font-size:28px;font-weight:700;letter-spacing:.05em;
+  background:linear-gradient(130deg,#fff 20%,var(--blue) 55%,var(--cyan) 90%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.1;
+}
+.hero-subtitle{font-family:var(--M);font-size:10.5px;color:var(--text3);
+  letter-spacing:.18em;text-transform:uppercase;margin-top:4px;}
+.pills{display:flex;gap:7px;flex-wrap:wrap;}
+.pill{padding:4px 13px;border-radius:20px;font-family:var(--M);font-size:10px;border:1px solid;}
+.pill-green{background:rgba(74,222,128,.08);color:var(--green);border-color:rgba(74,222,128,.2);}
+.pill-blue{background:rgba(99,179,255,.07);color:var(--blue);border-color:rgba(99,179,255,.18);}
+.pill-violet{background:rgba(167,139,250,.07);color:var(--violet);border-color:rgba(167,139,250,.18);}
+.hero-line{height:1px;background:linear-gradient(90deg,transparent,rgba(99,179,255,.3),rgba(103,232,249,.15),transparent);}
+
+/* section label */
+.sec-label{font-family:var(--D);font-size:8.5px;font-weight:700;color:var(--blue);
+  letter-spacing:.22em;text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;}
+.sec-label::before{content:'';width:3px;height:14px;border-radius:2px;
+  background:linear-gradient(180deg,var(--blue),var(--cyan));}
+
+/* intent box */
+.intent-box{
+  background:var(--glass);
+  border:1px solid var(--border);border-radius:14px;
+  backdrop-filter:blur(20px);padding:20px;margin-bottom:16px;
+  box-shadow:0 0 40px rgba(99,179,255,.06),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:border-color .2s,box-shadow .2s;
+}
+.intent-box:focus-within{border-color:var(--border-blue);box-shadow:0 0 60px rgba(99,179,255,.12),inset 0 1px 0 rgba(255,255,255,.07);}
+.intent-textarea{
+  width:100%;background:transparent;border:none;outline:none;resize:none;
+  color:var(--text);font-family:var(--M);font-size:13px;line-height:1.7;
+  min-height:90px;
+}
+.intent-textarea::placeholder{color:var(--text3);}
+.intent-footer{display:flex;align-items:center;justify-content:space-between;
+  margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
+.intent-hint{font-family:var(--M);font-size:10px;color:var(--text3);}
+
+/* examples */
+.examples{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:20px;}
+.ex-chip{
+  padding:5px 13px;border-radius:20px;cursor:pointer;
+  font-family:var(--M);font-size:10px;color:var(--text2);
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  transition:all .15s;
+}
+.ex-chip:hover{background:rgba(99,179,255,.1);border-color:var(--border-blue);color:var(--blue);}
+
+/* generate btn */
+.gen-btn{
+  padding:13px 32px;border-radius:10px;border:none;cursor:pointer;
+  font-family:var(--D);font-size:10px;font-weight:700;letter-spacing:.15em;
+  background:linear-gradient(135deg,rgba(99,179,255,.22),rgba(103,232,249,.16));
+  border:1px solid var(--cyan);color:var(--cyan);
+  box-shadow:0 0 28px rgba(103,232,249,.18);
+  transition:all .25s;
+}
+.gen-btn:hover{box-shadow:0 0 50px rgba(103,232,249,.35);transform:translateY(-2px);}
+.gen-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+/* divider */
+.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(99,179,255,.18),transparent);margin:28px 0;}
+
+/* output grid */
+.output-grid{display:grid;grid-template-columns:1fr 1.4fr .85fr;gap:16px;margin-top:20px;}
+
+/* glass panel */
+.panel{
+  background:var(--glass);border:1px solid var(--border);border-radius:14px;
+  backdrop-filter:blur(20px);padding:18px;
+  box-shadow:0 0 30px rgba(99,179,255,.05),inset 0 1px 0 rgba(255,255,255,.05);
+  transition:border-color .3s,box-shadow .3s;
+}
+.panel:hover{border-color:rgba(99,179,255,.15);box-shadow:0 0 50px rgba(99,179,255,.1),inset 0 1px 0 rgba(255,255,255,.06);}
+.panel-label{font-family:var(--D);font-size:8px;font-weight:700;color:var(--cyan);
+  letter-spacing:.22em;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.step-num{font-family:var(--M);font-size:9px;color:var(--text3);
+  padding:1px 6px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid var(--border);}
+
+/* json */
+.json-out{
+  background:rgba(0,0,0,.4);border:1px solid rgba(74,222,128,.15);
+  border-left:2px solid var(--green);border-radius:8px;
+  padding:12px;font-family:var(--M);font-size:11px;
+  color:#a7f3d0;line-height:1.8;overflow-x:auto;
+}
+
+/* config */
+.config-out{
+  background:rgba(0,0,0,.45);border:1px solid rgba(99,179,255,.14);
+  border-left:2px solid var(--blue);border-radius:8px;
+  padding:12px;font-family:var(--M);font-size:11.5px;
+  color:var(--cyan);line-height:1.8;overflow-x:auto;white-space:pre;
+  max-height:300px;overflow-y:auto;
+}
+.config-out::-webkit-scrollbar{width:2px}
+.config-out::-webkit-scrollbar-thumb{background:rgba(99,179,255,.3)}
+
+.copy-btn{
+  margin-top:10px;padding:7px 16px;border-radius:7px;
+  font-family:var(--D);font-size:8.5px;font-weight:700;letter-spacing:.12em;
+  background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.28);
+  color:var(--violet);cursor:pointer;transition:all .18s;
+}
+.copy-btn:hover{background:rgba(167,139,250,.2);box-shadow:0 0 16px rgba(167,139,250,.2);}
+
+/* score ring */
+.score-wrap{text-align:center;padding:16px 0;}
+.score-ring{
+  width:96px;height:96px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  border:2px solid;transition:all .4s;
+  box-shadow:0 0 32px currentColor;
+  background:rgba(0,0,0,.35);
+}
+.score-num{font-family:var(--D);font-size:26px;font-weight:700;line-height:1;}
+.score-sub{font-family:var(--M);font-size:9px;opacity:.6;margin-top:2px;}
+.score-label{font-family:var(--D);font-size:10px;font-weight:700;letter-spacing:.2em;}
+.alert{
+  padding:9px 12px;border-radius:8px;
+  font-family:var(--M);font-size:11px;margin-top:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.alert-green{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.25);color:var(--green);}
+.alert-amber{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.25);color:var(--amber);}
+.alert-red{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);color:var(--red);}
+
+/* log */
+.log-item{
+  padding:12px 14px;border-radius:10px;margin-bottom:8px;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  cursor:pointer;transition:all .15s;
+}
+.log-item:hover{border-color:rgba(99,179,255,.18);background:rgba(99,179,255,.04);}
+.log-intent{font-family:var(--M);font-size:11.5px;color:var(--text);margin-bottom:4px;}
+.log-meta{font-family:var(--M);font-size:10px;color:var(--text3);display:flex;gap:12px;}
+
+/* toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  padding:12px 20px;border-radius:10px;
+  font-family:var(--M);font-size:12px;
+  background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);
+  color:var(--green);backdrop-filter:blur(20px);
+  transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* spinner */
+.spinner{
+  display:inline-block;width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(103,232,249,.2);border-top-color:var(--cyan);
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:10px;
+  font-family:var(--M);font-size:11px;color:var(--text2);padding:16px 0;}
+
+/* progress */
+.progress-bar{height:2px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:10px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:2px;
+  transition:width .3s;width:0%;}
+
+@media(max-width:900px){
+  .output-grid{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="toast" id="toast">Copied to clipboard</div>
+
+<div class="layout">
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-hex">⬡<div class="logo-dot"></div></div>
+    <div>
+      <div class="logo-text">IBN—RAG</div>
+      <div class="logo-sub">NETWORKING AGENT</div>
+    </div>
+  </div>
+
+  <div class="sb-label">Knowledge Base</div>
+
+  <label class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" multiple accept=".pdf,.txt,.md">
+    <div class="uz-icon">⬆</div>
+    <p>Drop files here<br><span style="color:var(--text3)">PDF · TXT · MD</span></p>
+  </label>
+  <div class="progress-bar"><div class="progress-fill" id="upload-progress"></div></div>
+
+  <input class="sb-input" id="ns-input" placeholder="namespace tag  e.g. cisco">
+  <button class="btn btn-outline" id="ingest-btn" style="margin-bottom:18px;">⬆  INGEST</button>
+
+  <div class="sb-label">Active Namespaces</div>
+  <div class="ns-list" id="ns-list"></div>
+
+  <div class="sb-label" style="margin-top:18px;">Output Format</div>
+  <select class="sb-select" id="fmt-select">
+    <option value="generic">Generic</option>
+    <option value="cisco">Cisco IOS</option>
+    <option value="juniper">Juniper JunOS</option>
+    <option value="ansible">Ansible YAML</option>
+  </select>
+
+  <div class="sys-info">
+    PARSER&nbsp;&nbsp;&nbsp;&nbsp;<span>phi3.5</span><br>
+    GENERATOR&nbsp;<span>qwen2.5-coder</span><br>
+    VECTOR DB&nbsp;&nbsp;<span>ChromaDB</span><br>
+    EMBEDDER&nbsp;&nbsp;&nbsp;<span>MiniLM-L6</span><br>
+    CLOUD API&nbsp;&nbsp;<span class="online">none · offline</span>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main class="main">
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-title">IBN — RAG</div>
+        <div class="hero-subtitle">Intent · Based · Networking · Agent</div>
+      </div>
+      <div class="pills">
+        <span class="pill pill-green">● Online</span>
+        <span class="pill pill-blue">CPU Only</span>
+        <span class="pill pill-violet">No Cloud API</span>
+      </div>
+    </div>
+    <div class="hero-line"></div>
+  </div>
+
+  <div class="sec-label">Network Intent</div>
+
+  <div class="examples">
+    <span class="ex-chip">Deny SSH from 10.0.0.0/8 to 192.168.1.100</span>
+    <span class="ex-chip">Permit HTTP from 192.168.10.0/24 to 10.0.1.5 09:00–18:00</span>
+    <span class="ex-chip">Block ICMP from any to 172.16.0.0/16 after 22:00</span>
+    <span class="ex-chip">Allow DNS from 192.168.0.0/16 to 8.8.8.8 port 53</span>
+  </div>
+
+  <div class="intent-box">
+    <textarea class="intent-textarea" id="intent-input"
+      placeholder='Describe your network policy in plain English...&#10;e.g. "Block all SSH from Sales VLAN to Finance server between 21:00 and 06:00"'></textarea>
+    <div class="intent-footer">
+      <span class="intent-hint">Natural language → verified CLI configuration</span>
+      <button class="gen-btn" id="gen-btn" disabled>⬡  GENERATE CONFIG</button>
+    </div>
+  </div>
+
+  <div id="output-section" style="display:none;">
+    <div class="divider"></div>
+    <div class="output-grid">
+      <div class="panel" id="panel-intent">
+        <div class="panel-label"><span class="step-num">01</span> Parsed Intent</div>
+        <div class="json-out" id="json-out"></div>
+      </div>
+      <div class="panel" id="panel-config">
+        <div class="panel-label"><span class="step-num">02</span> Generated Config</div>
+        <div class="config-out" id="config-out"></div>
+        <button class="copy-btn" id="copy-btn">⬇  COPY CONFIG</button>
+      </div>
+      <div class="panel" id="panel-safety">
+        <div class="panel-label"><span class="step-num">03</span> Safety Report</div>
+        <div class="score-wrap">
+          <div class="score-ring" id="score-ring">
+            <div class="score-num" id="score-num">—</div>
+            <div class="score-sub">/100</div>
+          </div>
+          <div class="score-label" id="score-label">—</div>
+        </div>
+        <div id="alerts-out"></div>
+        <div style="font-family:var(--M);font-size:10px;color:var(--text3);margin-top:10px;" id="kb-used"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="log-section" style="display:none;margin-top:36px;">
+    <div class="divider"></div>
+    <div class="sec-label">Session Log</div>
+    <div id="log-list"></div>
+  </div>
+</main>
+</div>
+
+<script>
+const API = '';
+let selectedNS = [];
+let sessionLog = [];
+
+// ── Animated mesh background ──────────────────────────────────────────────
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+resize(); window.addEventListener('resize', resize);
+
+const blobs = [
+  { x:.15, y:.08, rx:.85, ry:.55, r:99,  g:102, b:241, a:.13 },
+  { x:.85, y:.88, rx:.70, ry:.50, r:6,   g:182, b:212, a:.11 },
+  { x:.55, y:.35, rx:.55, ry:.42, r:167, g:139, b:250, a:.08 },
+];
+let t = 0;
+function drawBG(){
+  ctx.clearRect(0,0,W,H);
+  blobs.forEach((b,i)=>{
+    const ox = Math.sin(t*.0004 + i*2.1)*0.06;
+    const oy = Math.cos(t*.0003 + i*1.7)*0.05;
+    const gx = (b.x+ox)*W, gy = (b.y+oy)*H;
+    const grad = ctx.createRadialGradient(gx,gy,0, gx,gy, W*b.rx);
+    grad.addColorStop(0, `rgba(${b.r},${b.g},${b.b},${b.a})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,H);
+  });
+  t++;
+  requestAnimationFrame(drawBG);
+}
+drawBG();
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function showToast(msg='Copied!', color='var(--green)'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.color = color;
+  t.style.borderColor = color + '55';
+  t.style.background = color + '12';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function fmtJSON(obj){
+  return JSON.stringify(obj, null, 2)
+    .replace(/"([^"]+)":/g, '<span style="color:#6ee7b7">"$1"</span>:')
+    .replace(/: "([^"]+)"/g, ': <span style="color:#fde68a">"$1"</span>')
+    .replace(/: (true|false)/g, ': <span style="color:#f9a8d4">$1</span>');
+}
+
+// ── Namespaces ────────────────────────────────────────────────────────────
+async function loadNS(){
+  const res = await fetch(`${API}/api/namespaces`);
+  const data = await res.json();
+  const list = document.getElementById('ns-list');
+  list.innerHTML = '';
+  if(!data.namespaces.length){
+    list.innerHTML = '<div style="font-family:var(--M);font-size:10px;color:var(--text3);padding:4px 0;">No documents loaded</div>';
+    selectedNS = []; return;
+  }
+  data.namespaces.forEach(ns=>{
+    const active = selectedNS.includes(ns.name);
+    const chip = document.createElement('div');
+    chip.className = 'ns-chip' + (active?' active':'');
+    chip.innerHTML = `<span class="ns-name">${ns.name}</span><div style="display:flex;align-items:center;gap:8px;"><span class="ns-count">${ns.chunks} chunks</span><button class="ns-del" data-ns="${ns.name}">✕</button></div>`;
+    chip.addEventListener('click', e=>{
+      if(e.target.classList.contains('ns-del')) return;
+      if(selectedNS.includes(ns.name)) selectedNS = selectedNS.filter(n=>n!==ns.name);
+      else selectedNS.push(ns.name);
+      loadNS();
+    });
+    chip.querySelector('.ns-del').addEventListener('click', async()=>{
+      await fetch(`${API}/api/namespaces/${ns.name}`,{method:'DELETE'});
+      selectedNS = selectedNS.filter(n=>n!==ns.name);
+      loadNS();
+    });
+    list.appendChild(chip);
+  });
+  if(!selectedNS.length && data.namespaces.length) selectedNS = [data.namespaces[0].name];
+}
+loadNS();
+
+// ── Ingest ────────────────────────────────────────────────────────────────
+document.getElementById('ingest-btn').addEventListener('click', async()=>{
+  const files = document.getElementById('file-input').files;
+  const ns = document.getElementById('ns-input').value.trim();
+  if(!files.length){ showToast('Select files first','var(--amber)'); return; }
+  if(!ns){ showToast('Enter a namespace tag','var(--amber)'); return; }
+  const prog = document.getElementById('upload-progress');
+  let total = 0;
+  for(let i=0;i<files.length;i++){
+    prog.style.width = ((i/files.length)*100)+'%';
+    const fd = new FormData();
+    fd.append('file', files[i]);
+    fd.append('namespace', ns);
+    const res = await fetch(`${API}/api/ingest`,{method:'POST',body:fd});
+    const d = await res.json();
+    total += d.chunks;
+  }
+  prog.style.width = '100%';
+  setTimeout(()=>prog.style.width='0%', 1200);
+  showToast(`${total} chunks stored → '${ns}'`);
+  document.getElementById('ns-input').value = '';
+  document.getElementById('file-input').value = '';
+  loadNS();
+});
+
+// ── Intent input ──────────────────────────────────────────────────────────
+const intentInput = document.getElementById('intent-input');
+const genBtn = document.getElementById('gen-btn');
+intentInput.addEventListener('input', ()=>{
+  genBtn.disabled = !intentInput.value.trim() || !selectedNS.length;
+});
+
+// Examples
+document.querySelectorAll('.ex-chip').forEach(chip=>{
+  chip.addEventListener('click', ()=>{
+    intentInput.value = chip.textContent;
+    genBtn.disabled = false;
+    intentInput.focus();
+  });
+});
+
+// ── Generate ──────────────────────────────────────────────────────────────
+genBtn.addEventListener('click', async()=>{
+  const intent = intentInput.value.trim();
+  if(!intent || !selectedNS.length) return;
+
+  genBtn.disabled = true;
+  genBtn.innerHTML = '<span class="spinner"></span>  GENERATING';
+
+  const outSec = document.getElementById('output-section');
+  outSec.style.display = 'block';
+  document.getElementById('json-out').innerHTML = '<div class="loading-row"><span class="spinner"></span> Parsing intent...</div>';
+  document.getElementById('config-out').textContent = '';
+  document.getElementById('alerts-out').innerHTML = '';
+  document.getElementById('score-num').textContent = '—';
+  document.getElementById('score-label').textContent = '—';
+  document.getElementById('score-ring').style.borderColor = 'rgba(255,255,255,.1)';
+  document.getElementById('score-ring').style.boxShadow = 'none';
+  document.getElementById('score-ring').style.color = 'rgba(255,255,255,.1)';
+
+  try {
+    const res = await fetch(`${API}/api/generate`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({intent, namespaces: selectedNS, output_format: document.getElementById('fmt-select').value})
+    });
+    if(!res.ok){ const err=await res.json(); throw new Error(err.detail||'Server error'); }
+    const data = await res.json();
+
+    // Intent JSON
+    document.getElementById('json-out').innerHTML = '<pre>'+fmtJSON(data.intent_json)+'</pre>';
+
+    // Config
+    document.getElementById('config-out').textContent = data.config;
+
+    // Score
+    const sc = data.score;
+    const rc = sc>=70 ? 'var(--green)' : sc>=40 ? 'var(--amber)' : 'var(--red)';
+    const lb = sc>=70 ? 'SAFE' : sc>=40 ? 'REVIEW' : 'BLOCKED';
+    const ring = document.getElementById('score-ring');
+    ring.style.borderColor = rc;
+    ring.style.color = rc;
+    ring.style.boxShadow = `0 0 32px ${rc}55`;
+    document.getElementById('score-num').textContent = sc;
+    document.getElementById('score-num').style.color = rc;
+    document.getElementById('score-label').textContent = lb;
+    document.getElementById('score-label').style.color = rc;
+
+    // Alerts
+    const alertsOut = document.getElementById('alerts-out');
+    alertsOut.innerHTML = '';
+    if(data.safe) alertsOut.innerHTML += `<div class="alert alert-green">✓  Cleared for deployment</div>`;
+    else          alertsOut.innerHTML += `<div class="alert alert-red">✕  Deployment blocked</div>`;
+    data.issues.forEach(i=>  alertsOut.innerHTML += `<div class="alert alert-red">✕  ${i}</div>`);
+    data.warnings.forEach(w=> alertsOut.innerHTML += `<div class="alert alert-amber">△  ${w}</div>`);
+    document.getElementById('kb-used').textContent = 'kb: ' + selectedNS.join(' · ');
+
+    // Log
+    sessionLog.unshift({intent, score:sc, format: document.getElementById('fmt-select').value, ns:[...selectedNS]});
+    renderLog();
+
+    outSec.scrollIntoView({behavior:'smooth', block:'start'});
+  } catch(e) {
+    document.getElementById('json-out').innerHTML = `<div class="alert alert-red">✕  ${e.message}</div>`;
+  }
+
+  genBtn.disabled = false;
+  genBtn.innerHTML = '⬡  GENERATE CONFIG';
+});
+
+// Copy
+document.getElementById('copy-btn').addEventListener('click', ()=>{
+  const txt = document.getElementById('config-out').textContent;
+  navigator.clipboard.writeText(txt).then(()=>showToast('Config copied!'));
+});
+
+// ── Log ───────────────────────────────────────────────────────────────────
+function renderLog(){
+  if(!sessionLog.length) return;
+  const logSec = document.getElementById('log-section');
+  logSec.style.display = 'block';
+  const list = document.getElementById('log-list');
+  list.innerHTML = sessionLog.slice(0,6).map(h=>{
+    const dot = h.score>=70?'var(--green)':h.score>=40?'var(--amber)':'var(--red)';
+    return `<div class="log-item">
+      <div class="log-intent">${h.intent.slice(0,72)}${h.intent.length>72?'...':''}</div>
+      <div class="log-meta">
+        <span style="color:${dot}">● ${h.score}/100</span>
+        <span>${h.format}</span>
+        <span>${h.ns.join(' · ')}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
