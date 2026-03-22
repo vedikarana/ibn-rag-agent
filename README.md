@@ -3,9 +3,10 @@
 > Translate natural language network policies into verified, vendor-specific CLI configurations — fully offline, no API cost.
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/API-FastAPI-teal)](https://fastapi.tiangolo.com)
 [![Ollama](https://img.shields.io/badge/LLM-Ollama-green)](https://ollama.ai)
 [![ChromaDB](https://img.shields.io/badge/VectorDB-ChromaDB-purple)](https://trychroma.com)
-[![Streamlit](https://img.shields.io/badge/UI-Streamlit-red)](https://streamlit.io)
+[![LangChain](https://img.shields.io/badge/RAG-LangChain-orange)](https://langchain.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 ---
@@ -69,15 +70,21 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Run the app
+### 3. Set up environment variables
 ```bash
-streamlit run app/streamlit_app.py
+cp .env.example .env
+# Edit .env with your settings
 ```
 
-Open http://localhost:8501 in your browser.
+### 4. Run the app
+```bash
+uvicorn main:app --reload
+```
 
-### 4. Upload documents and generate configs
-1. Upload any vendor PDF or TXT in the sidebar
+Open http://localhost:8000 in your browser.
+
+### 5. Upload documents and generate configs
+1. Upload any vendor PDF or TXT via the UI
 2. Give it a tag (e.g. `cisco`, `juniper`, `my_runbook`)
 3. Type your network intent
 4. Click **Generate Configuration**
@@ -100,19 +107,20 @@ Open http://localhost:8501 in your browser.
 ```
 ibn-rag-agent/
 ├── src/
-│   ├── intent_parser.py       # Layer 2 — NL → structured JSON (phi3.5)
-│   ├── document_manager.py    # Layer 3 — RAG pipeline (ChromaDB)
-│   ├── config_generator.py    # Layer 4 — JSON → CLI (qwen2.5-coder)
-│   ├── safety_validator.py    # Layer 5 — risk scoring + blocklist
+│   ├── intent_parser.py       # NL → structured JSON (phi3.5)
+│   ├── document_manager.py    # RAG pipeline (ChromaDB)
+│   ├── config_generator.py    # JSON → CLI (qwen2.5-coder)
+│   ├── safety_validator.py    # Risk scoring + blocklist
 │   └── config.py              # Environment settings
-├── app/
-│   └── streamlit_app.py       # Web UI
+├── static/
+│   └── index.html             # Web UI
 ├── scripts/
 │   └── ingest_docs.py         # Batch document ingestion
 ├── data/
 │   └── docs/                  # Place vendor PDFs here
 ├── tests/
 │   └── hazard_configs/        # Known-bad configs for validator testing
+├── main.py                    # FastAPI entry point
 └── requirements.txt
 ```
 
@@ -127,7 +135,7 @@ Upload any of the following to the knowledge base:
 - NIST security standards (PDF)
 - IETF RFCs (PDF)
 - Custom CLI cheat sheets (TXT)
-- Internal network runbooks (TXT/PDF)
+- Internal network runbooks (TXT / PDF)
 
 ---
 
@@ -135,12 +143,13 @@ Upload any of the following to the knowledge base:
 
 | Component | Technology |
 |-----------|-----------|
+| Backend API | FastAPI |
 | Intent Parser | phi3.5 via Ollama (local) |
 | Config Generator | qwen2.5-coder:1.5b via Ollama (local) |
 | Vector Database | ChromaDB (persistent, local) |
 | Embeddings | all-MiniLM-L6-v2 (sentence-transformers) |
 | RAG Framework | LangChain |
-| Web UI | Streamlit |
+| Web UI | HTML + JavaScript (static/index.html) |
 | No GPU required | CPU-only, runs on any laptop |
 
 ---
@@ -162,7 +171,7 @@ Key contributions:
 ## Requirements
 
 - Python 3.10+
-- Ollama installed
+- Ollama installed and running
 - 4 GB RAM minimum (8 GB recommended)
 - No GPU required
 - Windows / Mac / Linux
@@ -177,5 +186,6 @@ MIT License — free to use, modify, and distribute.
 
 ## Author
 
-**Vedika Rana**
-GitHub: [@vedikarana](https://github.com/vedikarana)
+**Vedika Rana**  
+GitHub: [@vedikarana](https://github.com/vedikarana)  
+Project Link: [github.com/vedikarana/ibn-rag-agent](https://github.com/vedikarana/ibn-rag-agent)
