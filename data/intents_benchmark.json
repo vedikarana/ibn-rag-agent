@@ -1,0 +1,142 @@
+[
+  {
+    "intent_text": "Deny all TCP from 10.0.0.0/8 to 192.168.1.100 port 22",
+    "ground_truth_json": {
+      "source": "10.0.0.0/8",
+      "destination": "192.168.1.100",
+      "protocol": "tcp",
+      "port": "22",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "deny"
+    },
+    "category": "host-block",
+    "difficulty": "easy"
+  },
+  {
+    "intent_text": "Permit HTTP from 192.168.10.0/24 to 10.0.1.5 between 09:00 and 18:00",
+    "ground_truth_json": {
+      "source": "192.168.10.0/24",
+      "destination": "10.0.1.5",
+      "protocol": "tcp",
+      "port": "80",
+      "time_start": "09:00",
+      "time_end": "18:00",
+      "action": "permit"
+    },
+    "category": "time-based",
+    "difficulty": "medium"
+  },
+  {
+    "intent_text": "Block ICMP from any to 172.16.0.0/16",
+    "ground_truth_json": {
+      "source": "any",
+      "destination": "172.16.0.0/16",
+      "protocol": "icmp",
+      "port": "any",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "deny"
+    },
+    "category": "protocol-filter",
+    "difficulty": "easy"
+  },
+  {
+    "intent_text": "Allow DNS from 192.168.0.0/16 to 8.8.8.8 port 53",
+    "ground_truth_json": {
+      "source": "192.168.0.0/16",
+      "destination": "8.8.8.8",
+      "protocol": "udp",
+      "port": "53",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "permit"
+    },
+    "category": "protocol-filter",
+    "difficulty": "easy"
+  },
+  {
+    "intent_text": "Deny FTP traffic from 10.0.0.0/8 to any destination",
+    "ground_truth_json": {
+      "source": "10.0.0.0/8",
+      "destination": "any",
+      "protocol": "tcp",
+      "port": "21",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "deny"
+    },
+    "category": "protocol-filter",
+    "difficulty": "easy"
+  },
+  {
+    "intent_text": "Block all traffic from 192.168.50.0/24 to 10.0.0.1 after 22:00",
+    "ground_truth_json": {
+      "source": "192.168.50.0/24",
+      "destination": "10.0.0.1",
+      "protocol": "ip",
+      "port": "any",
+      "time_start": "22:00",
+      "time_end": "any",
+      "action": "deny"
+    },
+    "category": "time-based",
+    "difficulty": "medium"
+  },
+  {
+    "intent_text": "Permit HTTPS from 172.16.0.0/12 to 10.0.0.50 port 443",
+    "ground_truth_json": {
+      "source": "172.16.0.0/12",
+      "destination": "10.0.0.50",
+      "protocol": "tcp",
+      "port": "443",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "permit"
+    },
+    "category": "host-block",
+    "difficulty": "easy"
+  },
+  {
+    "intent_text": "Deny SSH from any source to 192.168.100.0/24 between 21:00 and 06:00",
+    "ground_truth_json": {
+      "source": "any",
+      "destination": "192.168.100.0/24",
+      "protocol": "tcp",
+      "port": "22",
+      "time_start": "21:00",
+      "time_end": "06:00",
+      "action": "deny"
+    },
+    "category": "time-based",
+    "difficulty": "medium"
+  },
+  {
+    "intent_text": "Allow UDP from 10.10.0.0/16 to 10.20.0.1 port 161",
+    "ground_truth_json": {
+      "source": "10.10.0.0/16",
+      "destination": "10.20.0.1",
+      "protocol": "udp",
+      "port": "161",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "permit"
+    },
+    "category": "protocol-filter",
+    "difficulty": "easy"
+  },
+  {
+    "intent_text": "Block all IP traffic from 192.168.1.50 to 10.0.0.0/8",
+    "ground_truth_json": {
+      "source": "192.168.1.50",
+      "destination": "10.0.0.0/8",
+      "protocol": "ip",
+      "port": "any",
+      "time_start": "any",
+      "time_end": "any",
+      "action": "deny"
+    },
+    "category": "subnet-block",
+    "difficulty": "easy"
+  }
+]
